@@ -39,6 +39,8 @@ const subRoleOptions = {
   机械狼: ["守卫", "通灵师", "双刀狼", "平民", "女巫", "猎人"],
 };
 
+const wolfRoles = ["小狼", "大狼", "狼枪", "机械狼", "盗宝大师", "石像鬼", "血月使徒", "狼美人"];
+
 const STORAGE_KEY = "x2rank.records.v1";
 
 const state = {
@@ -302,9 +304,7 @@ function updateSubRoleField() {
 }
 
 function syncCampWithRole() {
-  if (["盗宝大师", "机械狼"].includes(el("role").value)) {
-    el("camp").value = "wolf";
-  }
+  el("camp").value = wolfRoles.includes(el("role").value) ? "wolf" : "good";
 }
 
 function roleScopeMatches(roleScope, role) {
