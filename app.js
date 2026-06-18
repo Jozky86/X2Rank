@@ -41,6 +41,8 @@ const subRoleOptions = {
 
 const wolfRoles = ["小狼", "大狼", "狼枪", "机械狼", "盗宝大师", "石像鬼", "血月使徒", "狼美人"];
 
+const seasons = ["S2"];
+const CURRENT_SEASON = "S2";
 const STORAGE_KEY = "x2rank.records.v1";
 
 const state = {
@@ -48,6 +50,7 @@ const state = {
   extras: [],
   records: loadRecords(),
   selectedPlayer: "",
+  selectedSeason: CURRENT_SEASON,
   sortKey: "totalScore",
 };
 
@@ -81,6 +84,7 @@ function createSampleRecords() {
     {
       id: "sample-1",
       playerName: "小明",
+      season: CURRENT_SEASON,
       gameDate: "2026-06-16",
       gameRound: 1,
       boardType: "狼美骑士",
@@ -101,6 +105,7 @@ function createSampleRecords() {
     {
       id: "sample-2",
       playerName: "小明",
+      season: CURRENT_SEASON,
       gameDate: "2026-06-16",
       gameRound: 2,
       boardType: "预女猎白混",
@@ -119,6 +124,7 @@ function createSampleRecords() {
     {
       id: "sample-3",
       playerName: "小明",
+      season: CURRENT_SEASON,
       gameDate: "2026-06-17",
       gameRound: 1,
       boardType: "血月猎魔人",
@@ -137,6 +143,7 @@ function createSampleRecords() {
     {
       id: "sample-4",
       playerName: "阿强",
+      season: CURRENT_SEASON,
       gameDate: "2026-06-17",
       gameRound: 2,
       boardType: "机械狼通灵师",
@@ -155,6 +162,7 @@ function createSampleRecords() {
     {
       id: "sample-5",
       playerName: "阿强",
+      season: CURRENT_SEASON,
       gameDate: "2026-06-18",
       gameRound: 1,
       boardType: "机械狼通灵师",
@@ -175,6 +183,7 @@ function createSampleRecords() {
     {
       id: "sample-6",
       playerName: "小王",
+      season: CURRENT_SEASON,
       gameDate: "2026-06-18",
       gameRound: 2,
       boardType: "盗宝通灵",
@@ -193,6 +202,7 @@ function createSampleRecords() {
     {
       id: "sample-7",
       playerName: "小王",
+      season: CURRENT_SEASON,
       gameDate: "2026-06-18",
       gameRound: 3,
       boardType: "石像鬼守墓人",
@@ -356,9 +366,18 @@ function getWinStreak(records) {
   return streak;
 }
 
+function recordSeason(record) {
+  return record.season || CURRENT_SEASON;
+}
+
+function getSeasonRecords() {
+  return state.records.filter((record) => recordSeason(record) === state.selectedSeason);
+}
+
 function getLeaderboard() {
   const byPlayer = new Map();
-  state.records.forEach((record) => {
+  const seasonRecords = getSeasonRecords();
+  seasonRecords.forEach((record) => {
     const current = byPlayer.get(record.playerName) || {
       playerName: record.playerName,
       totalScore: 0,
@@ -383,7 +402,7 @@ function getLeaderboard() {
       winRate: player.games ? player.wins / player.games : 0,
       sideRate: player.badgeGames ? player.badgeCorrect / player.badgeGames : 0,
       avgScore: player.games ? player.totalScore / player.games : 0,
-      winStreak: getWinStreak(state.records.filter((record) => record.playerName === player.playerName)),
+      winStreak: getWinStreak(seasonRecords.filter((record) => record.playerName === player.playerName)),
     }));
 
   return players.sort((a, b) => {
@@ -402,6 +421,7 @@ function renderSortButtons() {
 
 function renderLeaderboard() {
   const players = getLeaderboard();
+  const seasonRecords = getSeasonRecords();
   const body = el("leaderboardBody");
   body.innerHTML = "";
   renderSortButtons();
@@ -431,9 +451,9 @@ function renderLeaderboard() {
   }
 
   el("totalPlayers").textContent = players.length;
-  el("totalGames").textContent = state.records.length;
-  el("avgScore").textContent = state.records.length
-    ? formatScore(state.records.reduce((sum, item) => sum + item.score, 0) / state.records.length)
+  el("totalGames").textContent = seasonRecords.length;
+  el("avgScore").textContent = seasonRecords.length
+    ? formatScore(seasonRecords.reduce((sum, item) => sum + item.score, 0) / seasonRecords.length)
     : "0.0";
   el("topPlayer").textContent = players[0]?.playerName || "暂无";
 }
@@ -462,7 +482,7 @@ function createRecordCard(record, options = {}) {
     <div class="record-head">
       <div>
         <strong>${escapeHtml(record.playerName)}</strong>
-        <div class="meta">${escapeHtml(record.gameDate)} 第 ${record.gameRound} 局 · ${escapeHtml(record.boardType)}</div>
+        <div class="meta">${escapeHtml(recordSeason(record))} · ${escapeHtml(record.gameDate)} 第 ${record.gameRound} 局 · ${escapeHtml(record.boardType)}</div>
       </div>
       ${options.canDelete ? `<button class="delete" type="button" aria-label="删除记录">×</button>` : ""}
     </div>
@@ -526,7 +546,7 @@ function renderRecordCollection(list, records, options = {}) {
 }
 
 function renderRecords() {
-  renderRecordCollection(el("recordList"), state.records, {
+  renderRecordCollection(el("recordList"), getSeasonRecords(), {
     canDelete: true,
     limit: 12,
     emptyText: "暂无提交记录",
@@ -540,7 +560,7 @@ function renderPlayerPanel() {
     return;
   }
 
-  const records = state.records.filter((record) => record.playerName === state.selectedPlayer);
+  const records = getSeasonRecords().filter((record) => record.playerName === state.selectedPlayer);
   if (!records.length) {
     state.selectedPlayer = "";
     panel.classList.add("hidden");
@@ -581,6 +601,7 @@ function resetForm() {
   form.reset();
   state.extras = [];
   setToday();
+  el("season").value = state.selectedSeason;
   updateSubRoleField();
   updateSkillActions();
   renderExtras();
@@ -614,6 +635,13 @@ function bindEvents() {
       state.sortKey = button.dataset.sort;
       renderLeaderboard();
     });
+  });
+
+  el("seasonFilter").addEventListener("change", () => {
+    state.selectedSeason = el("seasonFilter").value;
+    el("season").value = state.selectedSeason;
+    state.selectedPlayer = "";
+    renderAll();
   });
 
   document.querySelectorAll("#autoPanel input, #camp").forEach((input) => {
@@ -691,6 +719,7 @@ function bindEvents() {
     const record = {
       id: crypto.randomUUID(),
       playerName: el("playerName").value.trim(),
+      season: el("season").value,
       gameDate: el("gameDate").value,
       gameRound: numberValue("gameRound"),
       boardType: el("boardType").value,
@@ -717,6 +746,10 @@ function bindEvents() {
 function init() {
   fillOptions(el("boardType"), boards);
   fillOptions(el("role"), roles);
+  fillOptions(el("season"), seasons);
+  fillOptions(el("seasonFilter"), seasons);
+  el("season").value = CURRENT_SEASON;
+  el("seasonFilter").value = CURRENT_SEASON;
   setToday();
   bindEvents();
   updateSubRoleField();

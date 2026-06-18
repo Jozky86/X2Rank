@@ -77,6 +77,13 @@ h1 {
   letter-spacing: 0;
 }
 
+.season-line {
+  margin-top: 12px;
+  color: var(--accent-dark);
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-weight: 900;
+}
+
 h2 {
   font-size: 1.25rem;
 }
@@ -217,7 +224,18 @@ textarea:focus {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: end;
   gap: 8px;
+}
+
+.inline-select {
+  grid-template-columns: auto minmax(82px, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.inline-select select {
+  min-height: 42px;
 }
 
 .form-grid {

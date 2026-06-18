@@ -12,6 +12,7 @@
         <div>
           <p class="eyebrow">X2Rank</p>
           <h1>狼人杀积分榜</h1>
+          <p class="season-line">S2 赛季 · 我就站狼</p>
         </div>
         <div class="login-box" aria-label="登录占位">
           <label>
@@ -67,6 +68,10 @@
               <label>
                 日期
                 <input id="gameDate" name="gameDate" type="date" required />
+              </label>
+              <label>
+                赛季
+                <select id="season" name="season"></select>
               </label>
               <label>
                 第几局
@@ -219,7 +224,13 @@
               <p class="eyebrow">Leaderboard</p>
               <h2 id="rankTitle">排行榜</h2>
             </div>
-            <button id="exportData" class="ghost" type="button">导出</button>
+            <div class="head-actions">
+              <label class="inline-select">
+                赛季
+                <select id="seasonFilter"></select>
+              </label>
+              <button id="exportData" class="ghost" type="button">导出</button>
+            </div>
           </div>
           <div class="table-wrap">
             <table>
