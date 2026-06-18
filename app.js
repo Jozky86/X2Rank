@@ -77,7 +77,7 @@ const state = {
   selectedSeason: CURRENT_SEASON,
   sortKey: "totalScore",
   leaderboardFullscreen: false,
-  discussionExpanded: false,
+  view: "main",
 };
 
 const el = (id) => document.getElementById(id);
@@ -675,8 +675,6 @@ function createDiscussionCard(post) {
 function renderDiscussions() {
   const list = el("discussionList");
   list.innerHTML = "";
-  el("discussionTitle").textContent = state.discussionExpanded ? "讨论区" : "最新讨论";
-  el("toggleDiscussionView").textContent = state.discussionExpanded ? "收起" : "查看全部";
   if (!state.discussions.length) {
     list.innerHTML = `<div class="empty">还没有讨论，先发一条。</div>`;
     return;
@@ -684,15 +682,46 @@ function renderDiscussions() {
   const posts = state.discussions
     .slice()
     .sort((a, b) => b.createdAt - a.createdAt);
-  const visiblePosts = state.discussionExpanded ? posts : posts.slice(0, 3);
-  visiblePosts.forEach((post) => list.appendChild(createDiscussionCard(post)));
-  if (!state.discussionExpanded && posts.length > visiblePosts.length) {
-    const more = document.createElement("button");
-    more.className = "ghost discussion-more";
-    more.type = "button";
-    more.textContent = `查看全部 ${posts.length} 条讨论`;
-    more.addEventListener("click", openDiscussionView);
-    list.appendChild(more);
+  posts.forEach((post) => list.appendChild(createDiscussionCard(post)));
+}
+
+function renderDiscussionPreview() {
+  const list = el("discussionPreviewList");
+  list.innerHTML = "";
+  if (!state.discussions.length) {
+    list.innerHTML = `<div class="empty">还没有讨论。</div>`;
+    return;
+  }
+  state.discussions
+    .slice()
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 3)
+    .forEach((post) => {
+      const item = document.createElement("article");
+      item.className = "discussion-card compact-discussion";
+      item.innerHTML = `
+        <div class="discussion-head">
+          <div class="avatar">${avatarMarkup(post.author)}</div>
+          <div>
+            <strong>${escapeHtml(post.author)}</strong>
+            <div class="meta">${formatTime(post.createdAt)}</div>
+          </div>
+        </div>
+        <p>${escapeHtml(post.content)}</p>
+      `;
+      item.addEventListener("click", openDiscussionView);
+      list.appendChild(item);
+    });
+}
+
+function renderView() {
+  const showDiscussion = state.view === "discussion";
+  el("mainView").classList.toggle("hidden", showDiscussion);
+  el("discussionView").classList.toggle("hidden", !showDiscussion);
+  if (showDiscussion) {
+    renderDiscussions();
+  } else {
+    renderDiscussionPreview();
   }
 }
 
@@ -700,7 +729,7 @@ function renderAll() {
   renderLeaderboard();
   renderRecords();
   renderPlayerPanel();
-  renderDiscussions();
+  renderView();
 }
 
 function resetForm() {
@@ -754,15 +783,15 @@ function toggleLeaderboardFullscreen() {
 }
 
 function openDiscussionView() {
-  state.discussionExpanded = true;
-  renderDiscussions();
-  el("discussionTitle").scrollIntoView({ behavior: "smooth", block: "start" });
+  state.view = "discussion";
+  renderView();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function toggleDiscussionView() {
-  state.discussionExpanded = !state.discussionExpanded;
-  renderDiscussions();
-  el("discussionTitle").scrollIntoView({ behavior: "smooth", block: "start" });
+function closeDiscussionView() {
+  state.view = "main";
+  renderView();
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function readFileAsDataUrl(file) {
@@ -876,7 +905,8 @@ function bindEvents() {
   el("openPasswordModal").addEventListener("click", openPasswordModal);
   el("toggleFullscreen").addEventListener("click", toggleLeaderboardFullscreen);
   el("openDiscussionTop").addEventListener("click", openDiscussionView);
-  el("toggleDiscussionView").addEventListener("click", toggleDiscussionView);
+  el("openDiscussionInline").addEventListener("click", openDiscussionView);
+  el("closeDiscussionView").addEventListener("click", closeDiscussionView);
   el("discussionForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!state.currentUser) {
@@ -900,7 +930,7 @@ function bindEvents() {
     state.discussions.unshift(post);
     saveDiscussions();
     el("discussionContent").value = "";
-    renderDiscussions();
+    renderView();
   });
   document.querySelectorAll("[data-close-rules]").forEach((button) => {
     button.addEventListener("click", closeRulesModal);

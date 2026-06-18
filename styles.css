@@ -509,6 +509,22 @@ td {
   margin-top: 18px;
 }
 
+.discussion-page .discussion-panel {
+  min-height: calc(100vh - 48px);
+}
+
+.discussion-preview .discussion-card {
+  cursor: pointer;
+}
+
+.compact-discussion {
+  gap: 8px;
+}
+
+.compact-discussion .discussion-head {
+  margin-bottom: 0;
+}
+
 .player-profile {
   display: flex;
   align-items: center;

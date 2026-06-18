@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="shell">
+    <main id="mainView" class="shell">
       <section class="topbar" aria-label="站点概览">
         <div>
           <p class="eyebrow">X2Rank</p>
@@ -271,19 +271,15 @@
         <div id="playerRecordList" class="player-record-list"></div>
       </section>
 
-      <section class="panel discussion-panel" aria-labelledby="discussionTitle">
+      <section class="panel discussion-panel discussion-preview" aria-labelledby="discussionPreviewTitle">
         <div class="panel-head">
           <div>
             <p class="eyebrow">Forum</p>
-            <h2 id="discussionTitle">讨论版</h2>
+            <h2 id="discussionPreviewTitle">最新讨论</h2>
           </div>
-          <button id="toggleDiscussionView" class="ghost" type="button">查看全部</button>
+          <button id="openDiscussionInline" class="ghost" type="button">进入讨论区</button>
         </div>
-        <form id="discussionForm" class="discussion-form">
-          <textarea id="discussionContent" rows="3" maxlength="300" placeholder="发一条讨论，聊复盘、站边、名场面" required></textarea>
-          <button class="submit" type="submit">发布</button>
-        </form>
-        <div id="discussionList" class="discussion-list"></div>
+        <div id="discussionPreviewList" class="discussion-list"></div>
       </section>
 
       <section class="panel records-panel" aria-labelledby="recordsTitle">
@@ -295,6 +291,23 @@
           <button id="clearData" class="danger" type="button">清空数据</button>
         </div>
         <div id="recordList" class="record-list"></div>
+      </section>
+    </main>
+
+    <main id="discussionView" class="shell discussion-page hidden">
+      <section class="panel discussion-panel" aria-labelledby="discussionTitle">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Forum</p>
+            <h2 id="discussionTitle">讨论区</h2>
+          </div>
+          <button id="closeDiscussionView" class="ghost" type="button">返回排行榜</button>
+        </div>
+        <form id="discussionForm" class="discussion-form">
+          <textarea id="discussionContent" rows="3" maxlength="300" placeholder="发一条讨论，聊复盘、站边、名场面" required></textarea>
+          <button class="submit" type="submit">发布</button>
+        </form>
+        <div id="discussionList" class="discussion-list"></div>
       </section>
     </main>
 
