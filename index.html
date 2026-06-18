@@ -24,6 +24,7 @@
             <input id="loginPassword" type="password" placeholder="请输入密码" autocomplete="current-password" />
           </label>
           <button id="loginBtn" type="button">进入</button>
+          <button id="openPasswordModal" class="ghost" type="button">改密</button>
         </div>
         <datalist id="userList"></datalist>
       </section>
@@ -230,6 +231,7 @@
                 赛季
                 <select id="seasonFilter"></select>
               </label>
+              <button id="toggleFullscreen" class="ghost" type="button">全屏</button>
               <button id="exportData" class="ghost" type="button">导出</button>
             </div>
           </div>
@@ -276,6 +278,38 @@
         <div id="recordList" class="record-list"></div>
       </section>
     </main>
+
+    <div id="passwordModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="passwordTitle">
+      <div class="modal-backdrop" data-close-password></div>
+      <section class="modal-card small-modal">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Account</p>
+            <h2 id="passwordTitle">修改密码</h2>
+          </div>
+          <button class="ghost" type="button" data-close-password>关闭</button>
+        </div>
+        <form id="passwordForm" class="password-form">
+          <label>
+            账号
+            <input id="passwordUser" type="text" list="userList" required />
+          </label>
+          <label>
+            原密码
+            <input id="oldPassword" type="password" required autocomplete="current-password" />
+          </label>
+          <label>
+            新密码
+            <input id="newPassword" type="password" minlength="4" required autocomplete="new-password" />
+          </label>
+          <label>
+            确认新密码
+            <input id="confirmPassword" type="password" minlength="4" required autocomplete="new-password" />
+          </label>
+          <button class="submit" type="submit">保存新密码</button>
+        </form>
+      </section>
+    </div>
 
     <div id="rulesModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
       <div class="modal-backdrop" data-close-rules></div>

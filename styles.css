@@ -102,7 +102,7 @@ h3 {
 
 .login-box {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto;
+  grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto auto;
   align-items: end;
   width: min(560px, 100%);
   gap: 10px;
@@ -389,12 +389,36 @@ output {
 
 .table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
   width: 100%;
   min-width: 780px;
   border-collapse: collapse;
+}
+
+body.leaderboard-fullscreen {
+  overflow: hidden;
+}
+
+body.leaderboard-fullscreen .board-panel {
+  position: fixed;
+  inset: 10px;
+  z-index: 16;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 16px;
+}
+
+body.leaderboard-fullscreen .board-panel .table-wrap {
+  flex: 1;
+  overflow: auto;
+}
+
+body.leaderboard-fullscreen table {
+  min-width: 900px;
 }
 
 th,
@@ -657,6 +681,10 @@ td {
   overflow: hidden;
 }
 
+.small-modal {
+  width: min(460px, 100%);
+}
+
 .modal-head {
   display: flex;
   align-items: center;
@@ -692,6 +720,12 @@ td {
   padding-left: 1.35rem;
 }
 
+.password-form {
+  display: grid;
+  gap: 13px;
+  padding: 18px;
+}
+
 @media (max-width: 1050px) {
   .topbar,
   .grid {
@@ -716,8 +750,12 @@ td {
 
 @media (max-width: 720px) {
   .shell {
-    width: min(100% - 20px, 1440px);
-    padding-top: 10px;
+    width: min(100% - 12px, 1440px);
+    padding: 6px 0 24px;
+  }
+
+  h1 {
+    font-size: clamp(2.4rem, 16vw, 4rem);
   }
 
   .stats-strip,
@@ -732,10 +770,39 @@ td {
 
   .panel,
   .topbar {
-    padding: 14px;
+    padding: 12px;
   }
 
   .stats-strip div {
     min-height: 76px;
+  }
+
+  .panel-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .head-actions {
+    justify-content: stretch;
+  }
+
+  .head-actions > *,
+  .head-actions button {
+    flex: 1 1 auto;
+  }
+
+  th,
+  td {
+    padding: 10px 8px;
+  }
+
+  body.leaderboard-fullscreen .board-panel {
+    inset: 4px;
+    padding: 10px;
+    border-radius: 6px;
+  }
+
+  body.leaderboard-fullscreen table {
+    min-width: 820px;
   }
 }

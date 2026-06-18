@@ -60,15 +60,18 @@ const users = [
 ];
 const STORAGE_KEY = "x2rank.records.v2";
 const SESSION_KEY = "x2rank.currentUser.v1";
+const PASSWORDS_KEY = "x2rank.passwordOverrides.v1";
 
 const state = {
   mode: "auto",
   extras: [],
   records: loadRecords(),
+  passwordOverrides: loadPasswordOverrides(),
   currentUser: localStorage.getItem(SESSION_KEY) || "",
   selectedPlayer: "",
   selectedSeason: CURRENT_SEASON,
   sortKey: "totalScore",
+  leaderboardFullscreen: false,
 };
 
 const el = (id) => document.getElementById(id);
@@ -95,6 +98,26 @@ function loadRecords() {
 
 function saveRecords() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.records));
+}
+
+function loadPasswordOverrides() {
+  try {
+    return JSON.parse(localStorage.getItem(PASSWORDS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function savePasswordOverrides() {
+  localStorage.setItem(PASSWORDS_KEY, JSON.stringify(state.passwordOverrides));
+}
+
+function getUser(username) {
+  return users.find((user) => user.username === username);
+}
+
+function getUserPassword(username) {
+  return state.passwordOverrides[username] || getUser(username)?.password || "";
 }
 
 function fillOptions(select, values) {
@@ -511,6 +534,24 @@ function closeRulesModal() {
   el("rulesModal").classList.add("hidden");
 }
 
+function openPasswordModal() {
+  el("passwordUser").value = state.currentUser || el("loginName").value.trim();
+  el("oldPassword").value = "";
+  el("newPassword").value = "";
+  el("confirmPassword").value = "";
+  el("passwordModal").classList.remove("hidden");
+}
+
+function closePasswordModal() {
+  el("passwordModal").classList.add("hidden");
+}
+
+function toggleLeaderboardFullscreen() {
+  state.leaderboardFullscreen = !state.leaderboardFullscreen;
+  document.body.classList.toggle("leaderboard-fullscreen", state.leaderboardFullscreen);
+  el("toggleFullscreen").textContent = state.leaderboardFullscreen ? "退出全屏" : "全屏";
+}
+
 function bindEvents() {
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => switchMode(tab.dataset.mode));
@@ -565,8 +606,9 @@ function bindEvents() {
   el("loginBtn").addEventListener("click", () => {
     const name = el("loginName").value.trim();
     const password = el("loginPassword").value;
-    const user = users.find((item) => item.username === name && item.password === password);
-    if (!user) {
+    const user = getUser(name);
+    const validPassword = user && getUserPassword(name) === password;
+    if (!validPassword) {
       alert("账号或密码不正确");
       return;
     }
@@ -580,11 +622,45 @@ function bindEvents() {
 
   el("resetForm").addEventListener("click", resetForm);
   el("openRules").addEventListener("click", openRulesModal);
+  el("openPasswordModal").addEventListener("click", openPasswordModal);
+  el("toggleFullscreen").addEventListener("click", toggleLeaderboardFullscreen);
   document.querySelectorAll("[data-close-rules]").forEach((button) => {
     button.addEventListener("click", closeRulesModal);
   });
+  document.querySelectorAll("[data-close-password]").forEach((button) => {
+    button.addEventListener("click", closePasswordModal);
+  });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeRulesModal();
+    if (event.key === "Escape") {
+      closeRulesModal();
+      closePasswordModal();
+      if (state.leaderboardFullscreen) toggleLeaderboardFullscreen();
+    }
+  });
+
+  el("passwordForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const username = el("passwordUser").value.trim();
+    const oldPassword = el("oldPassword").value;
+    const newPassword = el("newPassword").value;
+    const confirmPassword = el("confirmPassword").value;
+    if (!getUser(username)) {
+      alert("账号不存在");
+      return;
+    }
+    if (getUserPassword(username) !== oldPassword) {
+      alert("原密码不正确");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert("两次新密码不一致");
+      return;
+    }
+    state.passwordOverrides[username] = newPassword;
+    savePasswordOverrides();
+    if (state.currentUser === username) el("loginPassword").value = newPassword;
+    closePasswordModal();
+    alert("密码已修改");
   });
 
   el("closePlayer").addEventListener("click", () => {
