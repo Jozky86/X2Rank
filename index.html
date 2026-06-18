@@ -17,14 +17,15 @@
         <div class="login-box" aria-label="登录占位">
           <label>
             账号
-            <input id="loginName" type="text" placeholder="先填昵称即可" autocomplete="username" />
+            <input id="loginName" type="text" placeholder="选择或输入账号" autocomplete="username" list="userList" />
           </label>
           <label>
             密码
-            <input type="password" placeholder="demo 暂不校验" autocomplete="current-password" />
+            <input id="loginPassword" type="password" placeholder="请输入密码" autocomplete="current-password" />
           </label>
           <button id="loginBtn" type="button">进入</button>
         </div>
+        <datalist id="userList"></datalist>
       </section>
 
       <section class="stats-strip" aria-label="积分统计">
@@ -63,7 +64,7 @@
             <div class="form-grid">
               <label>
                 玩家
-                <input id="playerName" name="playerName" type="text" required placeholder="例如：小明" />
+                <input id="playerName" name="playerName" type="text" required placeholder="登录后自动填入" />
               </label>
               <label>
                 日期
