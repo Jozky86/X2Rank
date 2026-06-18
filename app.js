@@ -67,6 +67,7 @@ const state = {
   extras: [],
   records: loadRecords(),
   passwordOverrides: loadPasswordOverrides(),
+  serverAvailable: false,
   currentUser: localStorage.getItem(SESSION_KEY) || "",
   selectedPlayer: "",
   selectedSeason: CURRENT_SEASON,
@@ -110,6 +111,39 @@ function loadPasswordOverrides() {
 
 function savePasswordOverrides() {
   localStorage.setItem(PASSWORDS_KEY, JSON.stringify(state.passwordOverrides));
+}
+
+async function apiRequest(path, options = {}) {
+  const response = await fetch(path, {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload.error || "服务器请求失败");
+  return payload;
+}
+
+async function loadServerState() {
+  if (window.location.protocol === "file:") return;
+  try {
+    const payload = await apiRequest("/api/state");
+    state.records = payload.records || [];
+    state.serverAvailable = true;
+    saveRecords();
+  } catch (error) {
+    console.warn("Using local browser storage:", error.message);
+  }
+}
+
+async function persistServer(path, options = {}) {
+  if (!state.serverAvailable) return true;
+  try {
+    await apiRequest(path, options);
+    return true;
+  } catch (error) {
+    alert(`服务器保存失败：${error.message}`);
+    return false;
+  }
 }
 
 function getUser(username) {
@@ -403,27 +437,35 @@ function createRecordCard(record, options = {}) {
   `;
 
   if (options.canDelete) {
-    item.querySelector(".delete").addEventListener("click", () => {
+    item.querySelector(".delete").addEventListener("click", async () => {
+      const saved = await persistServer(`/api/records/${encodeURIComponent(record.id)}`, { method: "DELETE" });
+      if (!saved) return;
       state.records = state.records.filter((existing) => existing.id !== record.id);
       saveRecords();
       renderAll();
     });
   }
 
-  item.querySelector(".comment-form").addEventListener("submit", (event) => {
+  item.querySelector(".comment-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const input = event.currentTarget.elements.comment;
     const content = input.value.trim();
     if (!content) return;
     const target = state.records.find((existing) => existing.id === record.id);
     if (!target) return;
-    target.comments = target.comments || [];
-    target.comments.push({
+    const comment = {
       id: crypto.randomUUID(),
       author: currentUserName(),
       content,
       createdAt: Date.now(),
+    };
+    const saved = await persistServer("/api/comments", {
+      method: "POST",
+      body: JSON.stringify({ recordId: record.id, comment }),
     });
+    if (!saved) return;
+    target.comments = target.comments || [];
+    target.comments.push(comment);
     input.value = "";
     saveRecords();
     renderAll();
@@ -603,11 +645,22 @@ function bindEvents() {
     });
   });
 
-  el("loginBtn").addEventListener("click", () => {
+  el("loginBtn").addEventListener("click", async () => {
     const name = el("loginName").value.trim();
     const password = el("loginPassword").value;
     const user = getUser(name);
-    const validPassword = user && getUserPassword(name) === password;
+    let validPassword = user && getUserPassword(name) === password;
+    if (state.serverAvailable) {
+      try {
+        await apiRequest("/api/login", {
+          method: "POST",
+          body: JSON.stringify({ username: name, password }),
+        });
+        validPassword = true;
+      } catch {
+        validPassword = false;
+      }
+    }
     if (!validPassword) {
       alert("账号或密码不正确");
       return;
@@ -638,7 +691,7 @@ function bindEvents() {
     }
   });
 
-  el("passwordForm").addEventListener("submit", (event) => {
+  el("passwordForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     const username = el("passwordUser").value.trim();
     const oldPassword = el("oldPassword").value;
@@ -648,13 +701,20 @@ function bindEvents() {
       alert("账号不存在");
       return;
     }
-    if (getUserPassword(username) !== oldPassword) {
+    if (!state.serverAvailable && getUserPassword(username) !== oldPassword) {
       alert("原密码不正确");
       return;
     }
     if (newPassword !== confirmPassword) {
       alert("两次新密码不一致");
       return;
+    }
+    if (state.serverAvailable) {
+      const saved = await persistServer("/api/change-password", {
+        method: "POST",
+        body: JSON.stringify({ username, oldPassword, newPassword }),
+      });
+      if (!saved) return;
     }
     state.passwordOverrides[username] = newPassword;
     savePasswordOverrides();
@@ -668,9 +728,11 @@ function bindEvents() {
     renderPlayerPanel();
   });
 
-  el("clearData").addEventListener("click", () => {
+  el("clearData").addEventListener("click", async () => {
     if (!state.records.length) return;
     if (confirm("确定清空所有本地积分记录吗？")) {
+      const saved = await persistServer("/api/records", { method: "DELETE" });
+      if (!saved) return;
       state.records = [];
       saveRecords();
       renderAll();
@@ -687,7 +749,7 @@ function bindEvents() {
     URL.revokeObjectURL(url);
   });
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!state.currentUser) {
       alert("请先登录账号");
@@ -712,6 +774,11 @@ function bindEvents() {
       comments: [],
       createdAt: Date.now(),
     };
+    const saved = await persistServer("/api/records", {
+      method: "POST",
+      body: JSON.stringify({ record }),
+    });
+    if (!saved) return;
     state.records.push(record);
     saveRecords();
     renderAll();
@@ -720,7 +787,8 @@ function bindEvents() {
   });
 }
 
-function init() {
+async function init() {
+  await loadServerState();
   fillOptions(el("boardType"), boards);
   fillOptions(el("role"), roles);
   fillOptions(el("season"), seasons);
