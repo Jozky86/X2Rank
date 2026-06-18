@@ -2,5 +2,8 @@
   "scripts": {
     "start": "node server.js",
     "service": "bash start.sh"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.11.1"
   }
 }

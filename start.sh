@@ -33,8 +33,22 @@ ensure_node() {
   fi
 }
 
+ensure_dependencies() {
+  if [[ -d "$APP_DIR/node_modules/better-sqlite3" ]]; then
+    return
+  fi
+  if ! command -v npm >/dev/null 2>&1; then
+    echo "npm is not installed. Please install npm first."
+    exit 1
+  fi
+  echo "Installing dependencies..."
+  cd "$APP_DIR"
+  npm install --omit=dev
+}
+
 start_app() {
   ensure_node
+  ensure_dependencies
   mkdir -p "$APP_DIR/data" "$LOG_DIR"
 
   if is_running; then

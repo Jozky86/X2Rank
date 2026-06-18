@@ -8,3 +8,5 @@ logs/
 .x2rank.pid
 data/store.json
 data/backups/
+data/x2rank.db*
+data/.sqlite-migrated

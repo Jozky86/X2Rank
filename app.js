@@ -451,13 +451,33 @@ function renderComments(record, container) {
         .map(
           (comment) => `
             <div class="comment">
-              <div><strong>${escapeHtml(comment.author)}</strong><span>${formatTime(comment.createdAt)}</span></div>
+              <div>
+                <strong>${escapeHtml(comment.author)}</strong>
+                <span>${formatTime(comment.createdAt)}</span>
+                ${
+                  state.currentUser === comment.author
+                    ? `<button class="comment-delete" type="button" data-delete-record-comment="${escapeHtml(comment.id)}">删除</button>`
+                    : ""
+                }
+              </div>
               <p>${escapeHtml(comment.content)}</p>
             </div>
           `,
         )
         .join("")
     : `<div class="comment-empty">暂无评论</div>`;
+  body.querySelectorAll("[data-delete-record-comment]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const commentId = button.dataset.deleteRecordComment;
+      const saved = await persistServer(`/api/comments/${encodeURIComponent(commentId)}`, { method: "DELETE" });
+      if (!saved) return;
+      const target = state.records.find((existing) => existing.id === record.id);
+      if (!target) return;
+      target.comments = (target.comments || []).filter((comment) => comment.id !== commentId);
+      saveRecords();
+      renderAll();
+    });
+  });
 }
 
 function createRecordCard(record, options = {}) {
@@ -599,7 +619,7 @@ function renderPlayerPanel() {
     <div><span>${formatScore(best)}</span><small>单局最高</small></div>
   `;
   renderRecordCollection(el("playerRecordList"), records, {
-    canDelete: false,
+    canDelete: state.currentUser === state.selectedPlayer,
     emptyText: "这个玩家还没有战绩",
   });
   panel.classList.remove("hidden");
@@ -613,13 +633,36 @@ function renderDiscussionComments(post, container) {
         .map(
           (comment) => `
             <div class="comment">
-              <div><strong>${escapeHtml(comment.author)}</strong><span>${formatTime(comment.createdAt)}</span></div>
+              <div>
+                <strong>${escapeHtml(comment.author)}</strong>
+                <span>${formatTime(comment.createdAt)}</span>
+                ${
+                  state.currentUser === comment.author
+                    ? `<button class="comment-delete" type="button" data-delete-discussion-comment="${escapeHtml(comment.id)}">删除</button>`
+                    : ""
+                }
+              </div>
               <p>${escapeHtml(comment.content)}</p>
             </div>
           `,
         )
         .join("")
     : `<div class="comment-empty">暂无留言</div>`;
+  body.querySelectorAll("[data-delete-discussion-comment]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const commentId = button.dataset.deleteDiscussionComment;
+      const saved = await persistServer(
+        `/api/discussions/${encodeURIComponent(post.id)}/comments/${encodeURIComponent(commentId)}`,
+        { method: "DELETE" },
+      );
+      if (!saved) return;
+      const target = state.discussions.find((item) => item.id === post.id);
+      if (!target) return;
+      target.comments = (target.comments || []).filter((comment) => comment.id !== commentId);
+      saveDiscussions();
+      renderDiscussions();
+    });
+  });
 }
 
 function createDiscussionCard(post) {

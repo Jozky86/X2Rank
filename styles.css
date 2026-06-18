@@ -693,6 +693,16 @@ td {
   font-weight: 800;
 }
 
+.comment-delete {
+  min-height: 24px;
+  border-radius: 5px;
+  padding: 0 7px;
+  color: var(--red);
+  background: #fbeceb;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
 .comment p {
   margin-top: 4px;
   overflow-wrap: anywhere;
