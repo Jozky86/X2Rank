@@ -126,13 +126,34 @@ function setToday() {
   el("gameDate").value = today;
 }
 
+function roleScopeMatches(roleScope, role) {
+  if (!roleScope) return true;
+  return roleScope.split(",").map((item) => item.trim()).includes(role);
+}
+
+function updateSkillActions() {
+  const role = el("role").value;
+  document.querySelectorAll(".quick-actions button").forEach((button) => {
+    button.classList.toggle("hidden", !roleScopeMatches(button.dataset.role, role));
+  });
+}
+
+function pruneRoleExtras() {
+  const role = el("role").value;
+  const originalLength = state.extras.length;
+  state.extras = state.extras.filter((item) => roleScopeMatches(item.roleScope, role));
+  if (state.extras.length !== originalLength) {
+    renderExtras();
+  }
+}
+
 function renderExtras() {
   const chipList = el("chipList");
   chipList.innerHTML = "";
   state.extras.forEach((item, index) => {
     const chip = document.createElement("span");
     chip.className = "chip";
-    chip.innerHTML = `${item.label} ${item.delta > 0 ? "+" : ""}${item.delta}<button type="button" aria-label="删除 ${item.label}">×</button>`;
+    chip.innerHTML = `${escapeHtml(item.label)} ${item.delta > 0 ? "+" : ""}${item.delta}<button type="button" aria-label="删除 ${escapeHtml(item.label)}">×</button>`;
     chip.querySelector("button").addEventListener("click", () => {
       state.extras.splice(index, 1);
       renderExtras();
@@ -342,6 +363,7 @@ function resetForm() {
   form.reset();
   state.extras = [];
   setToday();
+  updateSkillActions();
   renderExtras();
   updateLiveScore();
 }
@@ -365,11 +387,18 @@ function bindEvents() {
     input.addEventListener("change", updateLiveScore);
   });
 
+  el("role").addEventListener("change", () => {
+    updateSkillActions();
+    pruneRoleExtras();
+    updateLiveScore();
+  });
+
   document.querySelectorAll(".quick-actions button").forEach((button) => {
     button.addEventListener("click", () => {
       state.extras.push({
         label: button.dataset.label,
         delta: Number(button.dataset.delta),
+        roleScope: button.dataset.role || "",
       });
       renderExtras();
       updateLiveScore();
@@ -437,6 +466,7 @@ function init() {
   fillOptions(el("role"), roles);
   setToday();
   bindEvents();
+  updateSkillActions();
   updateLiveScore();
   renderAll();
 }
