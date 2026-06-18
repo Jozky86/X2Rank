@@ -56,7 +56,7 @@ const users = [
   { username: "木木", password: "123123" },
   { username: "S", password: "123123" },
   { username: "dx", password: "123123" },
-  { username: "-  QUEEN", password: "123123" },
+  { username: "QUEEN", password: "123123" },
 ];
 const STORAGE_KEY = "x2rank.records.v2";
 const SESSION_KEY = "x2rank.currentUser.v1";

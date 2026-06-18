@@ -20,7 +20,7 @@ const defaultUsers = [
   "木木",
   "S",
   "dx",
-  "-  QUEEN",
+  "QUEEN",
 ].map((username) => ({ username, password: "123123" }));
 
 const mimeTypes = {
@@ -50,7 +50,29 @@ async function loadStore() {
   store.users = store.users || defaultUsers;
   store.records = store.records || [];
   store.discussions = store.discussions || [];
+  migrateQueenName(store);
   return store;
+}
+
+function migrateQueenName(store) {
+  const oldName = "-  QUEEN";
+  const newName = "QUEEN";
+  const oldUser = store.users.find((user) => user.username === oldName);
+  const newUser = store.users.find((user) => user.username === newName);
+  if (oldUser && !newUser) oldUser.username = newName;
+  if (oldUser && newUser) store.users = store.users.filter((user) => user.username !== oldName);
+  store.records.forEach((record) => {
+    if (record.playerName === oldName) record.playerName = newName;
+    (record.comments || []).forEach((comment) => {
+      if (comment.author === oldName) comment.author = newName;
+    });
+  });
+  store.discussions.forEach((post) => {
+    if (post.author === oldName) post.author = newName;
+    (post.comments || []).forEach((comment) => {
+      if (comment.author === oldName) comment.author = newName;
+    });
+  });
 }
 
 async function saveStore(store) {
