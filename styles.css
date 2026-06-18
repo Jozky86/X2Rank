@@ -84,6 +84,12 @@ h1 {
   font-weight: 900;
 }
 
+.hero-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
 h2 {
   font-size: 1.25rem;
 }
@@ -716,6 +722,10 @@ td {
 .discussion-list {
   display: grid;
   gap: 12px;
+}
+
+.discussion-more {
+  width: fit-content;
 }
 
 .discussion-card {

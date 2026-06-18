@@ -77,6 +77,7 @@ const state = {
   selectedSeason: CURRENT_SEASON,
   sortKey: "totalScore",
   leaderboardFullscreen: false,
+  discussionExpanded: false,
 };
 
 const el = (id) => document.getElementById(id);
@@ -674,14 +675,25 @@ function createDiscussionCard(post) {
 function renderDiscussions() {
   const list = el("discussionList");
   list.innerHTML = "";
+  el("discussionTitle").textContent = state.discussionExpanded ? "讨论区" : "最新讨论";
+  el("toggleDiscussionView").textContent = state.discussionExpanded ? "收起" : "查看全部";
   if (!state.discussions.length) {
     list.innerHTML = `<div class="empty">还没有讨论，先发一条。</div>`;
     return;
   }
-  state.discussions
+  const posts = state.discussions
     .slice()
-    .sort((a, b) => b.createdAt - a.createdAt)
-    .forEach((post) => list.appendChild(createDiscussionCard(post)));
+    .sort((a, b) => b.createdAt - a.createdAt);
+  const visiblePosts = state.discussionExpanded ? posts : posts.slice(0, 3);
+  visiblePosts.forEach((post) => list.appendChild(createDiscussionCard(post)));
+  if (!state.discussionExpanded && posts.length > visiblePosts.length) {
+    const more = document.createElement("button");
+    more.className = "ghost discussion-more";
+    more.type = "button";
+    more.textContent = `查看全部 ${posts.length} 条讨论`;
+    more.addEventListener("click", openDiscussionView);
+    list.appendChild(more);
+  }
 }
 
 function renderAll() {
@@ -739,6 +751,18 @@ function toggleLeaderboardFullscreen() {
   state.leaderboardFullscreen = !state.leaderboardFullscreen;
   document.body.classList.toggle("leaderboard-fullscreen", state.leaderboardFullscreen);
   el("toggleFullscreen").textContent = state.leaderboardFullscreen ? "退出全屏" : "全屏";
+}
+
+function openDiscussionView() {
+  state.discussionExpanded = true;
+  renderDiscussions();
+  el("discussionTitle").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function toggleDiscussionView() {
+  state.discussionExpanded = !state.discussionExpanded;
+  renderDiscussions();
+  el("discussionTitle").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function readFileAsDataUrl(file) {
@@ -851,6 +875,8 @@ function bindEvents() {
   el("openRules").addEventListener("click", openRulesModal);
   el("openPasswordModal").addEventListener("click", openPasswordModal);
   el("toggleFullscreen").addEventListener("click", toggleLeaderboardFullscreen);
+  el("openDiscussionTop").addEventListener("click", openDiscussionView);
+  el("toggleDiscussionView").addEventListener("click", toggleDiscussionView);
   el("discussionForm").addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!state.currentUser) {
