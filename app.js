@@ -15,6 +15,7 @@ const roles = [
   "大狼",
   "狼枪",
   "机械狼",
+  "盗宝大师",
   "预言家",
   "女巫",
   "猎人",
@@ -29,8 +30,14 @@ const roles = [
   "梦魇",
   "狼美人",
   "骑士",
+  "蒙面人",
   "其他",
 ];
+
+const subRoleOptions = {
+  盗宝大师: ["毒师", "摄梦人", "猎人", "蒙面人", "通灵师"],
+  机械狼: ["守卫", "通灵师", "双刀狼", "平民", "女巫", "猎人"],
+};
 
 const STORAGE_KEY = "x2rank.records.v1";
 
@@ -127,22 +134,46 @@ function setToday() {
   el("gameDate").value = today;
 }
 
+function scopeMatches(scope, value) {
+  if (!scope) return true;
+  return scope.split(",").map((item) => item.trim()).includes(value);
+}
+
+function actionMatchesCurrentRole(button) {
+  return scopeMatches(button.dataset.role, el("role").value) && scopeMatches(button.dataset.subrole, el("subRole").value);
+}
+
+function extraMatchesCurrentRole(item) {
+  return scopeMatches(item.roleScope, el("role").value) && scopeMatches(item.subRoleScope, el("subRole").value);
+}
+
+function updateSubRoleField() {
+  const role = el("role").value;
+  const options = subRoleOptions[role] || [];
+  el("subRoleField").classList.toggle("hidden", !options.length);
+  fillOptions(el("subRole"), options);
+}
+
+function syncCampWithRole() {
+  if (["盗宝大师", "机械狼"].includes(el("role").value)) {
+    el("camp").value = "wolf";
+  }
+}
+
 function roleScopeMatches(roleScope, role) {
   if (!roleScope) return true;
-  return roleScope.split(",").map((item) => item.trim()).includes(role);
+  return scopeMatches(roleScope, role);
 }
 
 function updateSkillActions() {
-  const role = el("role").value;
   document.querySelectorAll(".quick-actions button").forEach((button) => {
-    button.classList.toggle("hidden", !roleScopeMatches(button.dataset.role, role));
+    button.classList.toggle("hidden", !actionMatchesCurrentRole(button));
   });
 }
 
 function pruneRoleExtras() {
-  const role = el("role").value;
   const originalLength = state.extras.length;
-  state.extras = state.extras.filter((item) => roleScopeMatches(item.roleScope, role));
+  state.extras = state.extras.filter((item) => extraMatchesCurrentRole(item));
   if (state.extras.length !== originalLength) {
     renderExtras();
   }
@@ -280,7 +311,7 @@ function createRecordCard(record, options = {}) {
       </div>
       ${options.canDelete ? `<button class="delete" type="button" aria-label="删除记录">×</button>` : ""}
     </div>
-    <div class="score">${formatScore(record.score)} 分 · ${escapeHtml(record.role)} · ${record.camp === "good" ? "好人" : "狼人"} · ${record.isWin ? "胜利" : "失败"}</div>
+    <div class="score">${formatScore(record.score)} 分 · ${escapeHtml(record.role)}${record.subRole ? `/${escapeHtml(record.subRole)}` : ""} · ${record.camp === "good" ? "好人" : "狼人"} · ${record.isWin ? "胜利" : "失败"}</div>
     <div class="meta">${record.mode === "manual" ? "直接上传" : "按细则计算"}${record.extras.length ? ` · ${record.extras.map((x) => escapeHtml(x.label)).join("、")}` : ""}</div>
     ${record.notes ? `<div class="notes">${escapeHtml(record.notes)}</div>` : ""}
     <div class="comments">
@@ -391,6 +422,7 @@ function resetForm() {
   form.reset();
   state.extras = [];
   setToday();
+  updateSubRoleField();
   updateSkillActions();
   renderExtras();
   updateLiveScore();
@@ -431,6 +463,14 @@ function bindEvents() {
   });
 
   el("role").addEventListener("change", () => {
+    updateSubRoleField();
+    syncCampWithRole();
+    updateSkillActions();
+    pruneRoleExtras();
+    updateLiveScore();
+  });
+
+  el("subRole").addEventListener("change", () => {
     updateSkillActions();
     pruneRoleExtras();
     updateLiveScore();
@@ -442,6 +482,7 @@ function bindEvents() {
         label: button.dataset.label,
         delta: Number(button.dataset.delta),
         roleScope: button.dataset.role || "",
+        subRoleScope: button.dataset.subrole || "",
       });
       renderExtras();
       updateLiveScore();
@@ -495,6 +536,7 @@ function bindEvents() {
       gameRound: numberValue("gameRound"),
       boardType: el("boardType").value,
       role: el("role").value,
+      subRole: el("subRoleField").classList.contains("hidden") ? "" : el("subRole").value,
       camp: getCamp(),
       isWin: el("isWin").checked,
       score: currentScore(),
@@ -517,6 +559,8 @@ function init() {
   fillOptions(el("role"), roles);
   setToday();
   bindEvents();
+  updateSubRoleField();
+  syncCampWithRole();
   updateSkillActions();
   updateLiveScore();
   renderAll();
