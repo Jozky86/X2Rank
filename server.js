@@ -39,7 +39,7 @@ async function ensureStore() {
   try {
     await fs.access(STORE_PATH);
   } catch {
-    await saveStore({ users: defaultUsers, records: [] });
+    await saveStore({ users: defaultUsers, records: [], discussions: [] });
   }
 }
 
@@ -49,6 +49,7 @@ async function loadStore() {
   const store = JSON.parse(raw);
   store.users = store.users || defaultUsers;
   store.records = store.records || [];
+  store.discussions = store.discussions || [];
   return store;
 }
 
@@ -67,7 +68,7 @@ function readBody(req) {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
-      if (body.length > 1_000_000) {
+      if (body.length > 2_500_000) {
         req.destroy();
         reject(new Error("Request body too large"));
       }
@@ -84,8 +85,9 @@ function readBody(req) {
 
 function publicState(store) {
   return {
-    users: store.users.map(({ username }) => ({ username })),
+    users: store.users.map(({ username, avatar }) => ({ username, avatar: avatar || "" })),
     records: store.records,
+    discussions: store.discussions,
   };
 }
 
@@ -117,6 +119,19 @@ async function handleApi(req, res) {
       return;
     }
     user.password = newPassword;
+    await saveStore(store);
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/avatar") {
+    const { username, avatar } = await readBody(req);
+    const user = store.users.find((item) => item.username === username);
+    if (!user) {
+      sendJson(res, 404, { ok: false, error: "账号不存在" });
+      return;
+    }
+    user.avatar = avatar || "";
     await saveStore(store);
     sendJson(res, 200, { ok: true });
     return;
@@ -158,6 +173,33 @@ async function handleApi(req, res) {
     }
     record.comments = record.comments || [];
     record.comments.push(comment);
+    await saveStore(store);
+    sendJson(res, 200, { ok: true, comment });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/discussions") {
+    const { post } = await readBody(req);
+    if (!post || !post.id || !post.author || !post.content) {
+      sendJson(res, 400, { ok: false, error: "讨论内容不完整" });
+      return;
+    }
+    store.discussions.unshift(post);
+    await saveStore(store);
+    sendJson(res, 200, { ok: true, post });
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname.startsWith("/api/discussions/") && url.pathname.endsWith("/comments")) {
+    const postId = decodeURIComponent(url.pathname.slice("/api/discussions/".length, -"/comments".length));
+    const { comment } = await readBody(req);
+    const post = store.discussions.find((item) => item.id === postId);
+    if (!post || !comment) {
+      sendJson(res, 404, { ok: false, error: "讨论不存在" });
+      return;
+    }
+    post.comments = post.comments || [];
+    post.comments.push(comment);
     await saveStore(store);
     sendJson(res, 200, { ok: true, comment });
     return;

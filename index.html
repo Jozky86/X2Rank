@@ -263,8 +263,23 @@
           </div>
           <button id="closePlayer" class="ghost" type="button">关闭</button>
         </div>
+        <div id="playerProfile" class="player-profile"></div>
         <div id="playerSummary" class="player-summary"></div>
         <div id="playerRecordList" class="player-record-list"></div>
+      </section>
+
+      <section class="panel discussion-panel" aria-labelledby="discussionTitle">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Forum</p>
+            <h2 id="discussionTitle">讨论版</h2>
+          </div>
+        </div>
+        <form id="discussionForm" class="discussion-form">
+          <textarea id="discussionContent" rows="3" maxlength="300" placeholder="发一条讨论，聊复盘、站边、名场面" required></textarea>
+          <button class="submit" type="submit">发布</button>
+        </form>
+        <div id="discussionList" class="discussion-list"></div>
       </section>
 
       <section class="panel records-panel" aria-labelledby="recordsTitle">

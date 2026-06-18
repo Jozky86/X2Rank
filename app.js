@@ -61,11 +61,15 @@ const users = [
 const STORAGE_KEY = "x2rank.records.v2";
 const SESSION_KEY = "x2rank.currentUser.v1";
 const PASSWORDS_KEY = "x2rank.passwordOverrides.v1";
+const PROFILES_KEY = "x2rank.profiles.v1";
+const DISCUSSIONS_KEY = "x2rank.discussions.v1";
 
 const state = {
   mode: "auto",
   extras: [],
   records: loadRecords(),
+  profiles: loadProfiles(),
+  discussions: loadDiscussions(),
   passwordOverrides: loadPasswordOverrides(),
   serverAvailable: false,
   currentUser: localStorage.getItem(SESSION_KEY) || "",
@@ -101,6 +105,30 @@ function saveRecords() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.records));
 }
 
+function loadProfiles() {
+  try {
+    return JSON.parse(localStorage.getItem(PROFILES_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveProfiles() {
+  localStorage.setItem(PROFILES_KEY, JSON.stringify(state.profiles));
+}
+
+function loadDiscussions() {
+  try {
+    return JSON.parse(localStorage.getItem(DISCUSSIONS_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDiscussions() {
+  localStorage.setItem(DISCUSSIONS_KEY, JSON.stringify(state.discussions));
+}
+
 function loadPasswordOverrides() {
   try {
     return JSON.parse(localStorage.getItem(PASSWORDS_KEY)) || {};
@@ -128,8 +156,15 @@ async function loadServerState() {
   try {
     const payload = await apiRequest("/api/state");
     state.records = payload.records || [];
+    state.discussions = payload.discussions || [];
+    state.profiles = {};
+    (payload.users || []).forEach((user) => {
+      state.profiles[user.username] = { avatar: user.avatar || "" };
+    });
     state.serverAvailable = true;
     saveRecords();
+    saveDiscussions();
+    saveProfiles();
   } catch (error) {
     console.warn("Using local browser storage:", error.message);
   }
@@ -152,6 +187,17 @@ function getUser(username) {
 
 function getUserPassword(username) {
   return state.passwordOverrides[username] || getUser(username)?.password || "";
+}
+
+function getAvatar(username) {
+  return state.profiles[username]?.avatar || "";
+}
+
+function avatarMarkup(username) {
+  const avatar = getAvatar(username);
+  return avatar
+    ? `<img src="${escapeHtml(avatar)}" alt="${escapeHtml(username)} 的头像" />`
+    : `<span>${escapeHtml(username.slice(0, 1).toUpperCase())}</span>`;
 }
 
 function fillOptions(select, values) {
@@ -448,6 +494,10 @@ function createRecordCard(record, options = {}) {
 
   item.querySelector(".comment-form").addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (!state.currentUser) {
+      alert("请先登录账号");
+      return;
+    }
     const input = event.currentTarget.elements.comment;
     const content = input.value.trim();
     if (!content) return;
@@ -522,6 +572,22 @@ function renderPlayerPanel() {
   const best = records.length ? records.reduce((max, record) => Math.max(max, record.score), records[0].score) : 0;
   const winStreak = getWinStreak(records);
   el("playerTitle").textContent = `${state.selectedPlayer} 的战绩`;
+  el("playerProfile").innerHTML = `
+    <div class="avatar large-avatar">${avatarMarkup(state.selectedPlayer)}</div>
+    <div class="profile-copy">
+      <strong>${escapeHtml(state.selectedPlayer)}</strong>
+      <span>${escapeHtml(state.selectedSeason)} · ${records.length} 局 · ${formatScore(totalScore)} 分</span>
+    </div>
+    ${
+      state.currentUser === state.selectedPlayer
+        ? `<label class="avatar-upload">上传头像<input id="avatarInput" type="file" accept="image/*" /></label>`
+        : ""
+    }
+  `;
+  const avatarInput = el("avatarInput");
+  if (avatarInput) {
+    avatarInput.addEventListener("change", handleAvatarUpload);
+  }
   el("playerSummary").innerHTML = `
     <div><span>${formatScore(totalScore)}</span><small>总分</small></div>
     <div><span>${records.length ? Math.round((wins / records.length) * 100) : 0}%</span><small>胜率</small></div>
@@ -538,10 +604,91 @@ function renderPlayerPanel() {
   panel.classList.remove("hidden");
 }
 
+function renderDiscussionComments(post, container) {
+  const comments = post.comments || [];
+  const body = container.querySelector(".discussion-comments");
+  body.innerHTML = comments.length
+    ? comments
+        .map(
+          (comment) => `
+            <div class="comment">
+              <div><strong>${escapeHtml(comment.author)}</strong><span>${formatTime(comment.createdAt)}</span></div>
+              <p>${escapeHtml(comment.content)}</p>
+            </div>
+          `,
+        )
+        .join("")
+    : `<div class="comment-empty">暂无留言</div>`;
+}
+
+function createDiscussionCard(post) {
+  const item = document.createElement("article");
+  item.className = "discussion-card";
+  item.innerHTML = `
+    <div class="discussion-head">
+      <div class="avatar">${avatarMarkup(post.author)}</div>
+      <div>
+        <strong>${escapeHtml(post.author)}</strong>
+        <div class="meta">${formatTime(post.createdAt)}</div>
+      </div>
+    </div>
+    <p>${escapeHtml(post.content)}</p>
+    <div class="discussion-comments"></div>
+    <form class="comment-form">
+      <input name="comment" type="text" maxlength="160" placeholder="回复这条讨论" required />
+      <button type="submit">发送</button>
+    </form>
+  `;
+  item.querySelector(".comment-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!state.currentUser) {
+      alert("请先登录账号");
+      return;
+    }
+    const input = event.currentTarget.elements.comment;
+    const content = input.value.trim();
+    if (!content) return;
+    const comment = {
+      id: crypto.randomUUID(),
+      author: currentUserName(),
+      content,
+      createdAt: Date.now(),
+    };
+    const saved = await persistServer(`/api/discussions/${encodeURIComponent(post.id)}/comments`, {
+      method: "POST",
+      body: JSON.stringify({ comment }),
+    });
+    if (!saved) return;
+    const target = state.discussions.find((item) => item.id === post.id);
+    if (!target) return;
+    target.comments = target.comments || [];
+    target.comments.push(comment);
+    input.value = "";
+    saveDiscussions();
+    renderDiscussions();
+  });
+  renderDiscussionComments(post, item);
+  return item;
+}
+
+function renderDiscussions() {
+  const list = el("discussionList");
+  list.innerHTML = "";
+  if (!state.discussions.length) {
+    list.innerHTML = `<div class="empty">还没有讨论，先发一条。</div>`;
+    return;
+  }
+  state.discussions
+    .slice()
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .forEach((post) => list.appendChild(createDiscussionCard(post)));
+}
+
 function renderAll() {
   renderLeaderboard();
   renderRecords();
   renderPlayerPanel();
+  renderDiscussions();
 }
 
 function resetForm() {
@@ -592,6 +739,33 @@ function toggleLeaderboardFullscreen() {
   state.leaderboardFullscreen = !state.leaderboardFullscreen;
   document.body.classList.toggle("leaderboard-fullscreen", state.leaderboardFullscreen);
   el("toggleFullscreen").textContent = state.leaderboardFullscreen ? "退出全屏" : "全屏";
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleAvatarUpload(event) {
+  const file = event.target.files?.[0];
+  if (!file || !state.currentUser) return;
+  if (file.size > 700_000) {
+    alert("头像图片太大，请选 700KB 以内的图片");
+    return;
+  }
+  const avatar = await readFileAsDataUrl(file);
+  const saved = await persistServer("/api/avatar", {
+    method: "POST",
+    body: JSON.stringify({ username: state.currentUser, avatar }),
+  });
+  if (!saved) return;
+  state.profiles[state.currentUser] = { avatar };
+  saveProfiles();
+  renderAll();
 }
 
 function bindEvents() {
@@ -677,6 +851,31 @@ function bindEvents() {
   el("openRules").addEventListener("click", openRulesModal);
   el("openPasswordModal").addEventListener("click", openPasswordModal);
   el("toggleFullscreen").addEventListener("click", toggleLeaderboardFullscreen);
+  el("discussionForm").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!state.currentUser) {
+      alert("请先登录账号");
+      return;
+    }
+    const content = el("discussionContent").value.trim();
+    if (!content) return;
+    const post = {
+      id: crypto.randomUUID(),
+      author: state.currentUser,
+      content,
+      comments: [],
+      createdAt: Date.now(),
+    };
+    const saved = await persistServer("/api/discussions", {
+      method: "POST",
+      body: JSON.stringify({ post }),
+    });
+    if (!saved) return;
+    state.discussions.unshift(post);
+    saveDiscussions();
+    el("discussionContent").value = "";
+    renderDiscussions();
+  });
   document.querySelectorAll("[data-close-rules]").forEach((button) => {
     button.addEventListener("click", closeRulesModal);
   });
