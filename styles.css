@@ -307,6 +307,12 @@ output {
   gap: 8px;
 }
 
+.skill-group-title {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
 .quick-actions button {
   min-height: 38px;
   padding: 0 10px;
