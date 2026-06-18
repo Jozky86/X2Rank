@@ -6,3 +6,5 @@ dist/
 .env.*
 logs/
 .x2rank.pid
+data/store.json
+data/backups/
