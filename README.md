@@ -16,6 +16,30 @@
 
 推荐在学校服务器上用 Node 启动，这样所有战绩、评论、密码都会保存到服务器本地的 `data/store.json`。
 
+一键后台启动：
+
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+常用命令：
+
+```bash
+./start.sh status
+./start.sh restart
+./start.sh stop
+./start.sh logs
+```
+
+指定端口：
+
+```bash
+PORT=80 ./start.sh
+```
+
+前台启动：
+
 ```bash
 npm start
 ```
