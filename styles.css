@@ -380,6 +380,31 @@ th {
   text-transform: uppercase;
 }
 
+.sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  border-radius: 6px;
+  padding: 0 8px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.sort-btn:hover,
+.sort-btn.active {
+  color: var(--ink);
+  background: #eef3f6;
+}
+
+.sort-btn span {
+  display: inline-block;
+  min-width: 10px;
+  color: var(--accent-dark);
+}
+
 td {
   font-weight: 760;
 }

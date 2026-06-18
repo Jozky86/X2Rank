@@ -39,6 +39,7 @@ const state = {
   extras: [],
   records: loadRecords(),
   selectedPlayer: "",
+  sortKey: "totalScore",
 };
 
 const el = (id) => document.getElementById(id);
@@ -192,29 +193,36 @@ function getLeaderboard() {
     byPlayer.set(record.playerName, current);
   });
 
-  return Array.from(byPlayer.values())
+  const players = Array.from(byPlayer.values())
     .map((player) => ({
       ...player,
       winRate: player.games ? player.wins / player.games : 0,
       avgScore: player.games ? player.totalScore / player.games : 0,
       winStreak: getWinStreak(state.records.filter((record) => record.playerName === player.playerName)),
-    }))
-    .sort(
-      (a, b) =>
-        b.totalScore - a.totalScore ||
-        b.winStreak - a.winStreak ||
-        b.winRate - a.winRate ||
-        a.playerName.localeCompare(b.playerName),
-    );
+    }));
+
+  return players.sort((a, b) => {
+    const primary = b[state.sortKey] - a[state.sortKey];
+    return primary || b.totalScore - a.totalScore || b.winRate - a.winRate || a.playerName.localeCompare(b.playerName);
+  });
+}
+
+function renderSortButtons() {
+  document.querySelectorAll(".sort-btn").forEach((button) => {
+    const isActive = button.dataset.sort === state.sortKey;
+    button.classList.toggle("active", isActive);
+    button.querySelector("span").textContent = isActive ? "↓" : "";
+  });
 }
 
 function renderLeaderboard() {
   const players = getLeaderboard();
   const body = el("leaderboardBody");
   body.innerHTML = "";
+  renderSortButtons();
 
   if (!players.length) {
-    body.innerHTML = `<tr><td colspan="6">还没有记录，先提交一局分数。</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7">还没有记录，先提交一局分数。</td></tr>`;
   } else {
     players.forEach((player, index) => {
       const row = document.createElement("tr");
@@ -400,6 +408,13 @@ function switchMode(mode) {
 function bindEvents() {
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => switchMode(tab.dataset.mode));
+  });
+
+  document.querySelectorAll(".sort-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.sortKey = button.dataset.sort;
+      renderLeaderboard();
+    });
   });
 
   document.querySelectorAll("#autoPanel input, #camp").forEach((input) => {
