@@ -44,7 +44,7 @@ start_app() {
   fi
 
   cd "$APP_DIR"
-  PORT="$PORT" nohup node server.js >>"$LOG_FILE" 2>&1 &
+  setsid env PORT="$PORT" node server.js >>"$LOG_FILE" 2>&1 < /dev/null &
   echo $! >"$PID_FILE"
   sleep 0.5
 
