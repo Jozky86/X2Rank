@@ -362,7 +362,7 @@ output {
 
 table {
   width: 100%;
-  min-width: 620px;
+  min-width: 700px;
   border-collapse: collapse;
 }
 
@@ -424,7 +424,7 @@ td {
 
 .player-summary {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
   margin-bottom: 14px;
 }

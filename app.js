@@ -167,6 +167,16 @@ function updateLiveScore() {
   el("liveScore").textContent = `${formatScore(getAutoScore())} 分`;
 }
 
+function getWinStreak(records) {
+  const sorted = [...records].sort((a, b) => b.createdAt - a.createdAt);
+  let streak = 0;
+  for (const record of sorted) {
+    if (!record.isWin) break;
+    streak += 1;
+  }
+  return streak;
+}
+
 function getLeaderboard() {
   const byPlayer = new Map();
   state.records.forEach((record) => {
@@ -187,8 +197,15 @@ function getLeaderboard() {
       ...player,
       winRate: player.games ? player.wins / player.games : 0,
       avgScore: player.games ? player.totalScore / player.games : 0,
+      winStreak: getWinStreak(state.records.filter((record) => record.playerName === player.playerName)),
     }))
-    .sort((a, b) => b.totalScore - a.totalScore || b.winRate - a.winRate || a.playerName.localeCompare(b.playerName));
+    .sort(
+      (a, b) =>
+        b.totalScore - a.totalScore ||
+        b.winStreak - a.winStreak ||
+        b.winRate - a.winRate ||
+        a.playerName.localeCompare(b.playerName),
+    );
 }
 
 function renderLeaderboard() {
@@ -206,6 +223,7 @@ function renderLeaderboard() {
         <td><button class="player-link" type="button">${escapeHtml(player.playerName)}</button></td>
         <td class="score">${formatScore(player.totalScore)}</td>
         <td>${Math.round(player.winRate * 100)}%</td>
+        <td>${player.winStreak}</td>
         <td>${player.games}</td>
         <td>${formatScore(player.avgScore)}</td>
       `;
@@ -338,10 +356,12 @@ function renderPlayerPanel() {
   const totalScore = records.reduce((sum, record) => sum + record.score, 0);
   const wins = records.filter((record) => record.isWin).length;
   const best = records.reduce((max, record) => Math.max(max, record.score), records[0].score);
+  const winStreak = getWinStreak(records);
   el("playerTitle").textContent = `${state.selectedPlayer} 的战绩`;
   el("playerSummary").innerHTML = `
     <div><span>${formatScore(totalScore)}</span><small>总分</small></div>
     <div><span>${Math.round((wins / records.length) * 100)}%</span><small>胜率</small></div>
+    <div><span>${winStreak}</span><small>当前连胜</small></div>
     <div><span>${records.length}</span><small>局数</small></div>
     <div><span>${formatScore(totalScore / records.length)}</span><small>均分</small></div>
     <div><span>${formatScore(best)}</span><small>单局最高</small></div>
