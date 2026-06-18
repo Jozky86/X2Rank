@@ -52,7 +52,10 @@
               <p class="eyebrow">Submit</p>
               <h2 id="submitTitle">提交单局分数</h2>
             </div>
-            <button id="resetForm" class="ghost" type="button">清空</button>
+            <div class="head-actions">
+              <button id="openRules" class="ghost" type="button">规则</button>
+              <button id="resetForm" class="ghost" type="button">清空</button>
+            </div>
           </div>
 
           <form id="scoreForm">
@@ -233,6 +236,51 @@
         <div id="recordList" class="record-list"></div>
       </section>
     </main>
+
+    <div id="rulesModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+      <div class="modal-backdrop" data-close-rules></div>
+      <section class="modal-card">
+        <div class="modal-head">
+          <div>
+            <p class="eyebrow">Rules</p>
+            <h2 id="rulesTitle">详细打分规则</h2>
+          </div>
+          <button class="ghost" type="button" data-close-rules>关闭</button>
+        </div>
+        <div class="rules-content">
+          <h3>分数构成（暂定 0617 版本）</h3>
+          <p>胜负分＋投票分＋人命分＋技能分＋其他</p>
+
+          <h3>胜负分</h3>
+          <p>胜利 5 分，失败 0 分。</p>
+
+          <h3>投票分</h3>
+          <p>只有好人有。好人胜利扣 X 分，好人失败加 X 分，X = |投对数量 - 投错数量|，加分上限 3，扣分上限 4。</p>
+          <ol>
+            <li>PK 台上都是好人，弃票算投对；除这种情况外，弃票一律视为投错。PK 台上的好人投票按 PK 台前的投票计算，其他人按 PK 台投票为当轮投票。</li>
+            <li>最后一狼交牌视为所有存活好人投对；有对跳预言家及查杀，外置位分票投对也不算投对（投死除外）。</li>
+            <li>狼人自爆后被狼人致死且没有机会投票的好人在好人阵营失败时 +0.5 分（比赛直接结束最后致死的好人不加分；没有过投票环节，就没有未投票分）。</li>
+            <li>竞选警长环节第一个自爆的狼人获胜后 -1 分（白狼王、血月使徒、吞毒小狼除外）。</li>
+            <li>任何版型都可以外置位投，只要和预言家一致，对错都算；自己投无关联（非查杀）投对也不算，投错依然算。</li>
+          </ol>
+
+          <h3>技能分</h3>
+          <p>守卫奶穿平民 -0.5，奶穿身份 -1，守平安夜 +1；女巫毒平民 -0.5，毒身份 -1，毒狼 +1（自爆吞毒不加分），摄梦人、猎人等同理。</p>
+
+          <h3>人命分</h3>
+          <p>好人：投死好人 -1，投好人没出局 -0.5，投死狼人 +1，投狼人未出局 +0.5。狼人：投死好人 +1。弃票无人命分。</p>
+          <ol>
+            <li>狼队拍刀时，好人阵营神牌技能默认最优方案但均不结算人命和附加分；拍刀失败时如最后一狼死于白天，则存活好人默认投对且 +1。</li>
+            <li>最后一狼自爆或交牌（必须在白天）默认存活好人投对且 +1。</li>
+            <li>平民明确发言跳身份导致狼人从最优刀变为非最优刀，双金水平民跳身份导致悍跳的狼人出局，都视为挡刀成功 +1。</li>
+            <li>狼人悍跳预言家成功 +1.5，狼王/狼美人发动技能成功 +0.6；被放逐的是好人且身上没有狼票，或平安日，存活狼 +0.7。</li>
+          </ol>
+
+          <h3>其他</h3>
+          <p>4 狼在场获胜，所有狼人额外加 1 分；好人没有弄死过好人获胜，所有好人额外加 1 分。</p>
+        </div>
+      </section>
+    </div>
 
     <script src="./app.js"></script>
   </body>

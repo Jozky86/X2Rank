@@ -405,6 +405,14 @@ function switchMode(mode) {
   el("manualPanel").classList.toggle("hidden", mode !== "manual");
 }
 
+function openRulesModal() {
+  el("rulesModal").classList.remove("hidden");
+}
+
+function closeRulesModal() {
+  el("rulesModal").classList.add("hidden");
+}
+
 function bindEvents() {
   document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => switchMode(tab.dataset.mode));
@@ -446,6 +454,14 @@ function bindEvents() {
   });
 
   el("resetForm").addEventListener("click", resetForm);
+  el("openRules").addEventListener("click", openRulesModal);
+  document.querySelectorAll("[data-close-rules]").forEach((button) => {
+    button.addEventListener("click", closeRulesModal);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeRulesModal();
+  });
+
   el("closePlayer").addEventListener("click", () => {
     state.selectedPlayer = "";
     renderPlayerPanel();
