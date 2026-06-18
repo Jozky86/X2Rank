@@ -63,10 +63,145 @@ function escapeHtml(value) {
 
 function loadRecords() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved) || [];
+    const samples = createSampleRecords();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
+    return samples;
   } catch {
     return [];
   }
+}
+
+function createSampleRecords() {
+  const baseTime = new Date("2026-06-18T20:00:00+08:00").getTime();
+  return [
+    {
+      id: "sample-1",
+      playerName: "小明",
+      gameDate: "2026-06-16",
+      gameRound: 1,
+      boardType: "狼美骑士",
+      role: "骑士",
+      subRole: "",
+      camp: "good",
+      isWin: true,
+      score: 7,
+      mode: "auto",
+      extras: [{ label: "骑士杀死狼", delta: 1, roleScope: "骑士", subRoleScope: "" }],
+      notes: "骑士戳中狼，白天轮次很干净。",
+      comments: [
+        { id: "sample-comment-1", author: "阿强", content: "这刀太关键了。", createdAt: baseTime - 590000 },
+      ],
+      createdAt: baseTime - 600000,
+    },
+    {
+      id: "sample-2",
+      playerName: "小明",
+      gameDate: "2026-06-16",
+      gameRound: 2,
+      boardType: "预女猎白混",
+      role: "女巫",
+      subRole: "",
+      camp: "good",
+      isWin: true,
+      score: 6,
+      mode: "auto",
+      extras: [{ label: "女巫毒狼", delta: 1, roleScope: "女巫", subRoleScope: "" }],
+      notes: "夜里毒中狼。",
+      comments: [],
+      createdAt: baseTime - 500000,
+    },
+    {
+      id: "sample-3",
+      playerName: "小明",
+      gameDate: "2026-06-17",
+      gameRound: 1,
+      boardType: "血月猎魔人",
+      role: "猎魔人",
+      subRole: "",
+      camp: "good",
+      isWin: false,
+      score: 1.5,
+      mode: "auto",
+      extras: [{ label: "猎魔人杀死狼", delta: 1, roleScope: "猎魔人", subRoleScope: "" }],
+      notes: "输局但技能有收益。",
+      comments: [],
+      createdAt: baseTime - 400000,
+    },
+    {
+      id: "sample-4",
+      playerName: "阿强",
+      gameDate: "2026-06-17",
+      gameRound: 2,
+      boardType: "机械狼通灵师",
+      role: "机械狼",
+      subRole: "女巫",
+      camp: "wolf",
+      isWin: true,
+      score: 7,
+      mode: "auto",
+      extras: [{ label: "机械狼女巫毒中好人", delta: 1, roleScope: "机械狼", subRoleScope: "女巫" }],
+      notes: "机械狼偷女巫，毒中神牌。",
+      comments: [],
+      createdAt: baseTime - 300000,
+    },
+    {
+      id: "sample-5",
+      playerName: "阿强",
+      gameDate: "2026-06-18",
+      gameRound: 1,
+      boardType: "机械狼通灵师",
+      role: "机械狼",
+      subRole: "双刀狼",
+      camp: "wolf",
+      isWin: true,
+      score: 6,
+      mode: "auto",
+      extras: [{ label: "机械狼双刀并游戏结束", delta: 1, roleScope: "机械狼", subRoleScope: "双刀狼" }],
+      notes: "双刀结束比赛，当前两连胜。",
+      comments: [
+        { id: "sample-comment-2", author: "小王", content: "这把狼队节奏很好。", createdAt: baseTime - 190000 },
+      ],
+      createdAt: baseTime - 200000,
+    },
+    {
+      id: "sample-6",
+      playerName: "小王",
+      gameDate: "2026-06-18",
+      gameRound: 2,
+      boardType: "盗宝通灵",
+      role: "盗宝大师",
+      subRole: "毒师",
+      camp: "wolf",
+      isWin: true,
+      score: 6,
+      mode: "auto",
+      extras: [{ label: "盗宝毒师毒中好人", delta: 1, roleScope: "盗宝大师", subRoleScope: "毒师" }],
+      notes: "盗宝大师偷毒师，毒中好人。",
+      comments: [],
+      createdAt: baseTime - 100000,
+    },
+    {
+      id: "sample-7",
+      playerName: "小王",
+      gameDate: "2026-06-18",
+      gameRound: 3,
+      boardType: "石像鬼守墓人",
+      role: "石像鬼",
+      subRole: "",
+      camp: "wolf",
+      isWin: false,
+      score: 2,
+      mode: "manual",
+      extras: [],
+      notes: "手动录分样例。",
+      comments: [
+        { id: "sample-comment-3", author: "小明", content: "差一点就翻了。", createdAt: baseTime - 45000 },
+      ],
+      createdAt: baseTime - 50000,
+    },
+  ];
 }
 
 function saveRecords() {
