@@ -86,6 +86,7 @@ function createSampleRecords() {
       subRole: "",
       camp: "good",
       isWin: true,
+      badgeVoteCorrect: true,
       score: 7,
       mode: "auto",
       extras: [{ label: "骑士杀死狼", delta: 1, roleScope: "骑士", subRoleScope: "" }],
@@ -105,6 +106,7 @@ function createSampleRecords() {
       subRole: "",
       camp: "good",
       isWin: true,
+      badgeVoteCorrect: true,
       score: 6,
       mode: "auto",
       extras: [{ label: "女巫毒狼", delta: 1, roleScope: "女巫", subRoleScope: "" }],
@@ -122,6 +124,7 @@ function createSampleRecords() {
       subRole: "",
       camp: "good",
       isWin: false,
+      badgeVoteCorrect: false,
       score: 1.5,
       mode: "auto",
       extras: [{ label: "猎魔人杀死狼", delta: 1, roleScope: "猎魔人", subRoleScope: "" }],
@@ -139,6 +142,7 @@ function createSampleRecords() {
       subRole: "女巫",
       camp: "wolf",
       isWin: true,
+      badgeVoteCorrect: true,
       score: 7,
       mode: "auto",
       extras: [{ label: "机械狼女巫毒中好人", delta: 1, roleScope: "机械狼", subRoleScope: "女巫" }],
@@ -156,6 +160,7 @@ function createSampleRecords() {
       subRole: "双刀狼",
       camp: "wolf",
       isWin: true,
+      badgeVoteCorrect: true,
       score: 6,
       mode: "auto",
       extras: [{ label: "机械狼双刀并游戏结束", delta: 1, roleScope: "机械狼", subRoleScope: "双刀狼" }],
@@ -175,6 +180,7 @@ function createSampleRecords() {
       subRole: "毒师",
       camp: "wolf",
       isWin: true,
+      badgeVoteCorrect: true,
       score: 6,
       mode: "auto",
       extras: [{ label: "盗宝毒师毒中好人", delta: 1, roleScope: "盗宝大师", subRoleScope: "毒师" }],
@@ -192,6 +198,7 @@ function createSampleRecords() {
       subRole: "",
       camp: "wolf",
       isWin: false,
+      badgeVoteCorrect: false,
       score: 2,
       mode: "manual",
       extras: [],
@@ -249,6 +256,11 @@ function currentScore() {
 
 function formatScore(score) {
   return Number(score).toFixed(1);
+}
+
+function formatBadgeVote(record) {
+  if (typeof record.badgeVoteCorrect !== "boolean") return "警徽未录";
+  return record.badgeVoteCorrect ? "警徽对" : "警徽错";
 }
 
 function formatTime(timestamp) {
@@ -351,10 +363,16 @@ function getLeaderboard() {
       playerName: record.playerName,
       totalScore: 0,
       wins: 0,
+      badgeCorrect: 0,
+      badgeGames: 0,
       games: 0,
     };
     current.totalScore += record.score;
     current.wins += record.isWin ? 1 : 0;
+    if (typeof record.badgeVoteCorrect === "boolean") {
+      current.badgeCorrect += record.badgeVoteCorrect ? 1 : 0;
+      current.badgeGames += 1;
+    }
     current.games += 1;
     byPlayer.set(record.playerName, current);
   });
@@ -363,6 +381,7 @@ function getLeaderboard() {
     .map((player) => ({
       ...player,
       winRate: player.games ? player.wins / player.games : 0,
+      sideRate: player.badgeGames ? player.badgeCorrect / player.badgeGames : 0,
       avgScore: player.games ? player.totalScore / player.games : 0,
       winStreak: getWinStreak(state.records.filter((record) => record.playerName === player.playerName)),
     }));
@@ -388,7 +407,7 @@ function renderLeaderboard() {
   renderSortButtons();
 
   if (!players.length) {
-    body.innerHTML = `<tr><td colspan="7">还没有记录，先提交一局分数。</td></tr>`;
+    body.innerHTML = `<tr><td colspan="8">还没有记录，先提交一局分数。</td></tr>`;
   } else {
     players.forEach((player, index) => {
       const row = document.createElement("tr");
@@ -397,6 +416,7 @@ function renderLeaderboard() {
         <td><button class="player-link" type="button">${escapeHtml(player.playerName)}</button></td>
         <td class="score">${formatScore(player.totalScore)}</td>
         <td>${Math.round(player.winRate * 100)}%</td>
+        <td>${Math.round(player.sideRate * 100)}%</td>
         <td>${player.winStreak}</td>
         <td>${player.games}</td>
         <td>${formatScore(player.avgScore)}</td>
@@ -446,7 +466,7 @@ function createRecordCard(record, options = {}) {
       </div>
       ${options.canDelete ? `<button class="delete" type="button" aria-label="删除记录">×</button>` : ""}
     </div>
-    <div class="score">${formatScore(record.score)} 分 · ${escapeHtml(record.role)}${record.subRole ? `/${escapeHtml(record.subRole)}` : ""} · ${record.camp === "good" ? "好人" : "狼人"} · ${record.isWin ? "胜利" : "失败"}</div>
+    <div class="score">${formatScore(record.score)} 分 · ${escapeHtml(record.role)}${record.subRole ? `/${escapeHtml(record.subRole)}` : ""} · ${record.camp === "good" ? "好人" : "狼人"} · ${record.isWin ? "胜利" : "失败"} · ${formatBadgeVote(record)}</div>
     <div class="meta">${record.mode === "manual" ? "直接上传" : "按细则计算"}${record.extras.length ? ` · ${record.extras.map((x) => escapeHtml(x.label)).join("、")}` : ""}</div>
     ${record.notes ? `<div class="notes">${escapeHtml(record.notes)}</div>` : ""}
     <div class="comments">
@@ -529,12 +549,16 @@ function renderPlayerPanel() {
 
   const totalScore = records.reduce((sum, record) => sum + record.score, 0);
   const wins = records.filter((record) => record.isWin).length;
+  const badgeRecords = records.filter((record) => typeof record.badgeVoteCorrect === "boolean");
+  const badgeCorrect = badgeRecords.filter((record) => record.badgeVoteCorrect).length;
+  const sideRate = badgeRecords.length ? badgeCorrect / badgeRecords.length : 0;
   const best = records.reduce((max, record) => Math.max(max, record.score), records[0].score);
   const winStreak = getWinStreak(records);
   el("playerTitle").textContent = `${state.selectedPlayer} 的战绩`;
   el("playerSummary").innerHTML = `
     <div><span>${formatScore(totalScore)}</span><small>总分</small></div>
     <div><span>${Math.round((wins / records.length) * 100)}%</span><small>胜率</small></div>
+    <div><span>${Math.round(sideRate * 100)}%</span><small>站边率</small></div>
     <div><span>${winStreak}</span><small>当前连胜</small></div>
     <div><span>${records.length}</span><small>局数</small></div>
     <div><span>${formatScore(totalScore / records.length)}</span><small>均分</small></div>
@@ -674,6 +698,7 @@ function bindEvents() {
       subRole: el("subRoleField").classList.contains("hidden") ? "" : el("subRole").value,
       camp: getCamp(),
       isWin: el("isWin").checked,
+      badgeVoteCorrect: el("badgeVote").value === "correct",
       score: currentScore(),
       mode: state.mode,
       extras: [...state.extras],

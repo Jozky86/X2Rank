@@ -91,6 +91,13 @@
                   <option value="wolf">狼人</option>
                 </select>
               </label>
+              <label>
+                警徽投票
+                <select id="badgeVote" name="badgeVote">
+                  <option value="correct">对</option>
+                  <option value="wrong">错</option>
+                </select>
+              </label>
             </div>
 
             <div class="mode-tabs" role="tablist" aria-label="计分方式">
@@ -222,6 +229,7 @@
                   <th>玩家</th>
                   <th><button class="sort-btn active" type="button" data-sort="totalScore">总分 <span>↓</span></button></th>
                   <th><button class="sort-btn" type="button" data-sort="winRate">胜率 <span></span></button></th>
+                  <th><button class="sort-btn" type="button" data-sort="sideRate">站边率 <span></span></button></th>
                   <th><button class="sort-btn" type="button" data-sort="winStreak">连胜 <span></span></button></th>
                   <th><button class="sort-btn" type="button" data-sort="games">局数 <span></span></button></th>
                   <th><button class="sort-btn" type="button" data-sort="avgScore">均分 <span></span></button></th>
