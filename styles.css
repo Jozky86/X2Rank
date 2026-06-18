@@ -404,11 +404,54 @@ td {
   font-weight: 950;
 }
 
-.records-panel {
+.player-link {
+  min-height: 32px;
+  border-radius: 6px;
+  padding: 0 8px;
+  color: var(--accent-dark);
+  background: #e8f3f3;
+  font-weight: 900;
+}
+
+.player-link:hover {
+  background: #d6ebec;
+}
+
+.records-panel,
+.player-panel {
   margin-top: 18px;
 }
 
-.record-list {
+.player-summary {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.player-summary div {
+  min-height: 78px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfd;
+}
+
+.player-summary span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1.35rem;
+  font-weight: 950;
+}
+
+.player-summary small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.record-list,
+.player-record-list {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
@@ -446,6 +489,65 @@ td {
   overflow-wrap: anywhere;
 }
 
+.comments {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+}
+
+.comment-list {
+  display: grid;
+  gap: 7px;
+}
+
+.comment {
+  border-radius: 6px;
+  padding: 8px;
+  background: #f5f8fa;
+}
+
+.comment div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.comment strong,
+.comment span,
+.comment-empty {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.comment p {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.comment-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.comment-form input {
+  min-height: 36px;
+}
+
+.comment-form button {
+  min-height: 36px;
+  border-radius: 6px;
+  padding: 0 12px;
+  color: #fff;
+  background: var(--ink);
+  font-weight: 850;
+}
+
 .record .delete {
   width: 30px;
   height: 30px;
@@ -481,6 +583,8 @@ td {
   }
 
   .record-list,
+  .player-record-list,
+  .player-summary,
   .form-grid.compact {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -496,7 +600,9 @@ td {
   .form-grid,
   .form-grid.compact,
   .quick-actions,
-  .record-list {
+  .record-list,
+  .player-record-list,
+  .player-summary {
     grid-template-columns: 1fr;
   }
 

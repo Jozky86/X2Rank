@@ -20,6 +20,7 @@ const state = {
   mode: "auto",
   extras: [],
   records: loadRecords(),
+  selectedPlayer: "",
 };
 
 const el = (id) => document.getElementById(id);
@@ -89,6 +90,19 @@ function formatScore(score) {
   return Number(score).toFixed(1);
 }
 
+function formatTime(timestamp) {
+  return new Date(timestamp).toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function currentUserName() {
+  return el("loginName").value.trim() || el("playerName").value.trim() || "匿名玩家";
+}
+
 function setToday() {
   const today = new Date().toISOString().slice(0, 10);
   el("gameDate").value = today;
@@ -150,12 +164,17 @@ function renderLeaderboard() {
       const row = document.createElement("tr");
       row.innerHTML = `
         <td><span class="rank ${index === 0 ? "top" : ""}">${index + 1}</span></td>
-        <td>${escapeHtml(player.playerName)}</td>
+        <td><button class="player-link" type="button">${escapeHtml(player.playerName)}</button></td>
         <td class="score">${formatScore(player.totalScore)}</td>
         <td>${Math.round(player.winRate * 100)}%</td>
         <td>${player.games}</td>
         <td>${formatScore(player.avgScore)}</td>
       `;
+      row.querySelector(".player-link").addEventListener("click", () => {
+        state.selectedPlayer = player.playerName;
+        renderPlayerPanel();
+        el("playerPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
       body.appendChild(row);
     });
   }
@@ -168,45 +187,137 @@ function renderLeaderboard() {
   el("topPlayer").textContent = players[0]?.playerName || "暂无";
 }
 
-function renderRecords() {
-  const list = el("recordList");
+function renderComments(record, container) {
+  const comments = record.comments || [];
+  const body = container.querySelector(".comment-list");
+  body.innerHTML = comments.length
+    ? comments
+        .map(
+          (comment) => `
+            <div class="comment">
+              <div><strong>${escapeHtml(comment.author)}</strong><span>${formatTime(comment.createdAt)}</span></div>
+              <p>${escapeHtml(comment.content)}</p>
+            </div>
+          `,
+        )
+        .join("")
+    : `<div class="comment-empty">暂无评论</div>`;
+}
+
+function createRecordCard(record, options = {}) {
+  const item = document.createElement("article");
+  item.className = "record";
+  item.innerHTML = `
+    <div class="record-head">
+      <div>
+        <strong>${escapeHtml(record.playerName)}</strong>
+        <div class="meta">${escapeHtml(record.gameDate)} 第 ${record.gameRound} 局 · ${escapeHtml(record.boardType)}</div>
+      </div>
+      ${options.canDelete ? `<button class="delete" type="button" aria-label="删除记录">×</button>` : ""}
+    </div>
+    <div class="score">${formatScore(record.score)} 分 · ${escapeHtml(record.role)} · ${record.camp === "good" ? "好人" : "狼人"} · ${record.isWin ? "胜利" : "失败"}</div>
+    <div class="meta">${record.mode === "manual" ? "直接上传" : "按细则计算"}${record.extras.length ? ` · ${record.extras.map((x) => escapeHtml(x.label)).join("、")}` : ""}</div>
+    ${record.notes ? `<div class="notes">${escapeHtml(record.notes)}</div>` : ""}
+    <div class="comments">
+      <div class="comment-list"></div>
+      <form class="comment-form">
+        <input name="comment" type="text" maxlength="160" placeholder="评论这局表现" required />
+        <button type="submit">发送</button>
+      </form>
+    </div>
+  `;
+
+  if (options.canDelete) {
+    item.querySelector(".delete").addEventListener("click", () => {
+      state.records = state.records.filter((existing) => existing.id !== record.id);
+      saveRecords();
+      renderAll();
+    });
+  }
+
+  item.querySelector(".comment-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const input = event.currentTarget.elements.comment;
+    const content = input.value.trim();
+    if (!content) return;
+    const target = state.records.find((existing) => existing.id === record.id);
+    if (!target) return;
+    target.comments = target.comments || [];
+    target.comments.push({
+      id: crypto.randomUUID(),
+      author: currentUserName(),
+      content,
+      createdAt: Date.now(),
+    });
+    input.value = "";
+    saveRecords();
+    renderAll();
+  });
+
+  renderComments(record, item);
+  return item;
+}
+
+function renderRecordCollection(list, records, options = {}) {
   list.innerHTML = "";
 
-  if (!state.records.length) {
-    list.innerHTML = `<div class="empty">暂无提交记录</div>`;
+  if (!records.length) {
+    list.innerHTML = `<div class="empty">${options.emptyText || "暂无提交记录"}</div>`;
     return;
   }
 
-  [...state.records]
+  [...records]
     .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, 12)
+    .slice(0, options.limit || records.length)
     .forEach((record) => {
-      const item = document.createElement("article");
-      item.className = "record";
-      item.innerHTML = `
-        <div class="record-head">
-          <div>
-            <strong>${escapeHtml(record.playerName)}</strong>
-            <div class="meta">${escapeHtml(record.gameDate)} 第 ${record.gameRound} 局 · ${escapeHtml(record.boardType)}</div>
-          </div>
-          <button class="delete" type="button" aria-label="删除记录">×</button>
-        </div>
-        <div class="score">${formatScore(record.score)} 分 · ${escapeHtml(record.role)} · ${record.camp === "good" ? "好人" : "狼人"} · ${record.isWin ? "胜利" : "失败"}</div>
-        <div class="meta">${record.mode === "manual" ? "直接上传" : "按细则计算"}${record.extras.length ? ` · ${record.extras.map((x) => escapeHtml(x.label)).join("、")}` : ""}</div>
-        ${record.notes ? `<div class="notes">${escapeHtml(record.notes)}</div>` : ""}
-      `;
-      item.querySelector(".delete").addEventListener("click", () => {
-        state.records = state.records.filter((existing) => existing.id !== record.id);
-        saveRecords();
-        renderAll();
-      });
-      list.appendChild(item);
+      list.appendChild(createRecordCard(record, options));
     });
+}
+
+function renderRecords() {
+  renderRecordCollection(el("recordList"), state.records, {
+    canDelete: true,
+    limit: 12,
+    emptyText: "暂无提交记录",
+  });
+}
+
+function renderPlayerPanel() {
+  const panel = el("playerPanel");
+  if (!state.selectedPlayer) {
+    panel.classList.add("hidden");
+    return;
+  }
+
+  const records = state.records.filter((record) => record.playerName === state.selectedPlayer);
+  if (!records.length) {
+    state.selectedPlayer = "";
+    panel.classList.add("hidden");
+    return;
+  }
+
+  const totalScore = records.reduce((sum, record) => sum + record.score, 0);
+  const wins = records.filter((record) => record.isWin).length;
+  const best = records.reduce((max, record) => Math.max(max, record.score), records[0].score);
+  el("playerTitle").textContent = `${state.selectedPlayer} 的战绩`;
+  el("playerSummary").innerHTML = `
+    <div><span>${formatScore(totalScore)}</span><small>总分</small></div>
+    <div><span>${Math.round((wins / records.length) * 100)}%</span><small>胜率</small></div>
+    <div><span>${records.length}</span><small>局数</small></div>
+    <div><span>${formatScore(totalScore / records.length)}</span><small>均分</small></div>
+    <div><span>${formatScore(best)}</span><small>单局最高</small></div>
+  `;
+  renderRecordCollection(el("playerRecordList"), records, {
+    canDelete: false,
+    emptyText: "这个玩家还没有战绩",
+  });
+  panel.classList.remove("hidden");
 }
 
 function renderAll() {
   renderLeaderboard();
   renderRecords();
+  renderPlayerPanel();
 }
 
 function resetForm() {
@@ -253,6 +364,10 @@ function bindEvents() {
   });
 
   el("resetForm").addEventListener("click", resetForm);
+  el("closePlayer").addEventListener("click", () => {
+    state.selectedPlayer = "";
+    renderPlayerPanel();
+  });
 
   el("clearData").addEventListener("click", () => {
     if (!state.records.length) return;
@@ -288,6 +403,7 @@ function bindEvents() {
       mode: state.mode,
       extras: [...state.extras],
       notes: el("notes").value.trim(),
+      comments: [],
       createdAt: Date.now(),
     };
     state.records.push(record);
