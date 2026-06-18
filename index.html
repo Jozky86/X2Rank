@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>X2Rank 狼人杀积分榜</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar" aria-label="站点概览">
+        <div>
+          <p class="eyebrow">X2Rank</p>
+          <h1>狼人杀积分榜</h1>
+        </div>
+        <div class="login-box" aria-label="登录占位">
+          <label>
+            账号
+            <input id="loginName" type="text" placeholder="先填昵称即可" autocomplete="username" />
+          </label>
+          <label>
+            密码
+            <input type="password" placeholder="demo 暂不校验" autocomplete="current-password" />
+          </label>
+          <button id="loginBtn" type="button">进入</button>
+        </div>
+      </section>
+
+      <section class="stats-strip" aria-label="积分统计">
+        <div>
+          <span id="totalPlayers">0</span>
+          <small>玩家</small>
+        </div>
+        <div>
+          <span id="totalGames">0</span>
+          <small>记录</small>
+        </div>
+        <div>
+          <span id="avgScore">0.0</span>
+          <small>平均分</small>
+        </div>
+        <div>
+          <span id="topPlayer">暂无</span>
+          <small>榜首</small>
+        </div>
+      </section>
+
+      <div class="grid">
+        <section class="panel score-panel" aria-labelledby="submitTitle">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Submit</p>
+              <h2 id="submitTitle">提交单局分数</h2>
+            </div>
+            <button id="resetForm" class="ghost" type="button">清空</button>
+          </div>
+
+          <form id="scoreForm">
+            <div class="form-grid">
+              <label>
+                玩家
+                <input id="playerName" name="playerName" type="text" required placeholder="例如：小明" />
+              </label>
+              <label>
+                日期
+                <input id="gameDate" name="gameDate" type="date" required />
+              </label>
+              <label>
+                第几局
+                <input id="gameRound" name="gameRound" type="number" min="1" value="1" required />
+              </label>
+              <label>
+                板子
+                <select id="boardType" name="boardType"></select>
+              </label>
+              <label>
+                角色
+                <select id="role" name="role"></select>
+              </label>
+              <label>
+                阵营
+                <select id="camp" name="camp">
+                  <option value="good">好人</option>
+                  <option value="wolf">狼人</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="mode-tabs" role="tablist" aria-label="计分方式">
+              <button class="tab active" type="button" data-mode="auto">按细则算分</button>
+              <button class="tab" type="button" data-mode="manual">直接上传总分</button>
+            </div>
+
+            <div id="autoPanel" class="scoring-panel">
+              <div class="section-title">
+                <h3>基础</h3>
+                <output id="liveScore">0.0 分</output>
+              </div>
+              <div class="form-grid compact">
+                <label class="check-row">
+                  <input id="isWin" type="checkbox" />
+                  本局胜利
+                </label>
+                <label>
+                  投对数量
+                  <input id="correctVotes" type="number" min="0" value="0" />
+                </label>
+                <label>
+                  投错数量
+                  <input id="wrongVotes" type="number" min="0" value="0" />
+                </label>
+                <label>
+                  狼人自爆后无投票机会补分
+                  <input id="noVoteBonus" type="number" min="0" max="3" step="0.5" value="0" />
+                </label>
+              </div>
+
+              <div class="section-title">
+                <h3>人命分</h3>
+              </div>
+              <div class="form-grid compact">
+                <label>
+                  投死好人次数
+                  <input id="killGood" type="number" min="0" value="0" />
+                </label>
+                <label>
+                  投好人未出局次数
+                  <input id="voteGoodAlive" type="number" min="0" value="0" />
+                </label>
+                <label>
+                  投死狼人次数
+                  <input id="killWolf" type="number" min="0" value="0" />
+                </label>
+                <label>
+                  投狼人未出局次数
+                  <input id="voteWolfAlive" type="number" min="0" value="0" />
+                </label>
+              </div>
+
+              <div class="section-title">
+                <h3>技能与额外</h3>
+              </div>
+              <div class="quick-actions" aria-label="技能分选项">
+                <button type="button" data-delta="-0.5" data-label="守卫奶穿平民">守卫奶穿平民 -0.5</button>
+                <button type="button" data-delta="-1" data-label="守卫奶穿身份">守卫奶穿身份 -1</button>
+                <button type="button" data-delta="1" data-label="守平安夜">守平安夜 +1</button>
+                <button type="button" data-delta="-0.5" data-label="女巫毒平民">女巫毒平民 -0.5</button>
+                <button type="button" data-delta="-1" data-label="女巫毒身份">女巫毒身份 -1</button>
+                <button type="button" data-delta="1" data-label="女巫毒狼">女巫毒狼 +1</button>
+                <button type="button" data-delta="1" data-label="挡刀成功">挡刀成功 +1</button>
+                <button type="button" data-delta="1.5" data-label="悍跳预言家成功">悍跳预言家 +1.5</button>
+                <button type="button" data-delta="0.6" data-label="狼王/狼美技能成功">狼王技能 +0.6</button>
+                <button type="button" data-delta="0.7" data-label="存活狼额外">存活狼 +0.7</button>
+                <button type="button" data-delta="1" data-label="4狼在场获胜">4狼在场获胜 +1</button>
+                <button type="button" data-delta="1" data-label="好人零误伤获胜">好人零误伤 +1</button>
+                <button type="button" data-delta="-1" data-label="警长竞选首爆">竞选首爆 -1</button>
+              </div>
+              <div id="chipList" class="chip-list" aria-live="polite"></div>
+            </div>
+
+            <div id="manualPanel" class="scoring-panel hidden">
+              <label>
+                总分
+                <input id="manualScore" type="number" step="0.1" value="0" />
+              </label>
+            </div>
+
+            <label>
+              备注
+              <textarea id="notes" rows="3" placeholder="例如：最后一狼交牌，存活好人默认投对"></textarea>
+            </label>
+
+            <button class="submit" type="submit">提交记录</button>
+          </form>
+        </section>
+
+        <section class="panel board-panel" aria-labelledby="rankTitle">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Leaderboard</p>
+              <h2 id="rankTitle">排行榜</h2>
+            </div>
+            <button id="exportData" class="ghost" type="button">导出</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>排名</th>
+                  <th>玩家</th>
+                  <th>总分</th>
+                  <th>胜率</th>
+                  <th>局数</th>
+                  <th>均分</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboardBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel records-panel" aria-labelledby="recordsTitle">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">History</p>
+            <h2 id="recordsTitle">最近提交</h2>
+          </div>
+          <button id="clearData" class="danger" type="button">清空数据</button>
+        </div>
+        <div id="recordList" class="record-list"></div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
